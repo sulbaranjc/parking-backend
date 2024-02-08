@@ -135,6 +135,23 @@ app.post('/api/tickets/cerrar', async (req, res) => {
   }
 });
 
+// Endpoint para calcular los ingresos totales del día
+app.get('/api/ingresos/totales', async (req, res) => {
+  const queryIngresosTotales = `
+    SELECT SUM(total_pagar) AS ingresos_totales
+    FROM ticket
+    WHERE DATE(fecha_salida) = CURDATE();
+  `;
+
+  try {
+    const [result] = await db.promise().query(queryIngresosTotales);
+    const ingresosTotales = result[0].ingresos_totales || 0;
+    res.json({ success: true, ingresosTotales: ingresosTotales });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al calcular los ingresos totales.', error: error.message });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
