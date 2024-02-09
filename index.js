@@ -19,7 +19,7 @@ const db = mysql.createConnection({
   database: process.env.DB_DATABASE
 });
 
-// Verificar conexión a la base de datos
+//  Verificar conexión a la base de datos
 db.connect((err) => {
   if (err) {
     throw err;
@@ -31,7 +31,7 @@ app.get('/hola', (req, res) => {
   res.send('Hola Mundo');
 });
 
-//DEVUELVE TODOS LOS PARKINGS
+//Endpoint que DEVUELVE TODOS LOS PARKINGS
 app.get('/api/parkings', (req, res) => {
   const query = 'SELECT * FROM aparcamiento';
   db.query(query, (err, results) => {
@@ -44,7 +44,7 @@ app.get('/api/parkings', (req, res) => {
 });
 
 
-// CAMBIAR DISPONIBILIDAD DE UN PARKING
+// Endpoint para CAMBIAR DISPONIBILIDAD DE UN PARKING
 app.post('/api/parkings/disponibilidad', async (req, res) => {
   const { numeroEspacio, disponible } = req.body;
   const query = 'UPDATE aparcamiento SET disponible = ? WHERE numero = ?';
@@ -61,7 +61,7 @@ app.post('/api/parkings/disponibilidad', async (req, res) => {
   }
 });
 
-//INSERTAR UN TICKET
+//Endpoint para INSERTAR UN TICKET
 app.post('/api/tickets/ingresar', async (req, res) => {
   const { aparcamiento_id, matricula, precio_hora } = req.body;
   // No necesitas recibir fecha_entrada desde el frontend
@@ -85,7 +85,7 @@ app.post('/api/tickets/ingresar', async (req, res) => {
 
 
 
-//DEVUELVE TODOS LOS TICKETS ACTIVOS
+//Endpoint que DEVUELVE TODOS LOS TICKETS ACTIVOS
 app.get('/api/tickets/activos', async (req, res) => {
   const query = 'SELECT * FROM ticket WHERE fecha_salida IS NULL';
 
@@ -97,7 +97,7 @@ app.get('/api/tickets/activos', async (req, res) => {
   }
 });
 
-//cierra un ticket
+//Endpoint que cierra un ticket
 app.post('/api/tickets/cerrar', async (req, res) => {
   // Asumiendo que recibimos el id del ticket y el precio por hora
   const { ticketId, precioHora } = req.body;
@@ -119,7 +119,7 @@ app.post('/api/tickets/cerrar', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ticket no encontrado.' });
     }
 
-    // Actualiza el ticket con la fecha de salida y el total a pagar
+    // Endpoint que Actualiza el ticket con la fecha de salida y el total a pagar
     const [updateResult] = await db.promise().query(updateQuery, [precioHora, ticketId]);
 
     if (updateResult.affectedRows === 0) {
@@ -151,6 +151,25 @@ app.get('/api/ingresos/totales', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al calcular los ingresos totales.', error: error.message });
   }
 });
+
+// Endpoint para buscar un aparcamiento disponible
+app.get('/api/aparcamientos/disponible', async (req, res) => {
+  // Esta consulta selecciona un aparcamiento disponible al azar
+  const query = 'SELECT * FROM aparcamiento WHERE disponible = TRUE ORDER BY RAND() LIMIT 1';
+
+  try {
+    const [rows] = await db.promise().query(query);
+    if (rows.length > 0) {
+      const aparcamientoDisponible = rows[0];
+      res.json({ success: true, aparcamiento: aparcamientoDisponible });
+    } else {
+      res.status(404).json({ success: false, message: 'No hay aparcamientos disponibles.' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al buscar un aparcamiento disponible.', error: error.message });
+  }
+});
+
 
 
 app.listen(port, () => {
